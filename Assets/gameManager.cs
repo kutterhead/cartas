@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -26,31 +27,28 @@ public class gameManager : MonoBehaviour
     public Canvas canvas;
 
     int indiceActualAdivina = 0;//el índice de la carta que hay que adivinar
-    [SerializeField]
-    int[] indicesAdivinados;
+    
 
     [SerializeField]
     int indiceActual = 0;
 
-    public Image cartaAdivina;
 
+    public Image cartaAdivina;//la carta que se muestra para adivinar
+    [SerializeField]
+    int[] indicesAdivinados;
 
-
+    public byte vidas = 3;
     void Start()
     {
 
-        
-
-
-
-
+       
 
         sprites = Resources.LoadAll<Sprite>("sheet1");//captura de los sprites
         //cartaMaestraPrefab = cartaMaestra.gameObject;
 
         System.Array.Resize(ref cartasFisicas, sprites.Length - 2);
-        indiceActualAdivina = Random.Range(0, sprites.Length-2);
-        cartaAdivina.sprite = sprites[indiceActualAdivina];
+        //indiceActualAdivina = Random.Range(0, sprites.Length-2);
+        //cartaAdivina.sprite = sprites[indiceActualAdivina];
 
 
 
@@ -96,6 +94,9 @@ public class gameManager : MonoBehaviour
 
 
         mezclaCartas();
+
+        StartCoroutine(tirarNuevaCarta());
+        cartaMaestra.gameObject.SetActive(false);
     }
 
     // Update is called once per frame
@@ -117,16 +118,87 @@ public class gameManager : MonoBehaviour
             //la carta ha sido acertada y se pone la imagen de carta boca abajo
             cartasFisicas[indiceActualAdivina].GetComponent<Image>().sprite = sprites[sprites.Length-1];
             cartasFisicas[indiceActualAdivina].GetComponent<Button>().enabled = false;
+
+            StartCoroutine(tirarNuevaCarta());
+
         }
         else
         {
             print("La carta NO es correcta.");
+            vidas--;
+            if (vidas < 1)
+            {
+                print("Game Over, no quedan vidas.");
 
+            }
+            else {
+
+                print("Vidas restantes:" + vidas);
+            }           
+            
         }
 
    }
-    public void tirarNuevaCarta()
+    void voltearCartasArriba(){
+
+        for (int i = 0; i < cartasFisicas.Length; i++)//este bucle se recorre todas las cartas
+        {
+            int tempIdex =  cartasFisicas[i].GetComponent<scriptCarta>().indiceCarta;
+            cartasFisicas[i].GetComponent<Image>().sprite = sprites[tempIdex];
+            cartasFisicas[indiceActualAdivina].GetComponent<Button>().enabled = false;
+            for (int j = 0; j < indicesAdivinados.Length; j++)
+            {
+                if (tempIdex == indicesAdivinados[j])
+                {
+
+                    cartasFisicas[i].GetComponent<Image>().sprite = sprites[sprites.Length-1];
+                    //cartasFisicas[indiceActualAdivina].GetComponent<Button>().enabled = false;
+                }
+            }
+
+
+        }
+
+
+    }
+    void voltearCartasAbajo()
     {
+        for (int i = 0; i < cartasFisicas.Length; i++)//este bucle se recorre todas las cartas
+        {
+            cartasFisicas[i].GetComponent<Image>().sprite = sprites[sprites.Length - 1];
+            cartasFisicas[indiceActualAdivina].GetComponent<Button>().enabled = true;
+        }
+
+        }
+
+        IEnumerator tirarNuevaCarta()
+    {
+
+        voltearCartasArriba();
+        yield return new WaitForSeconds(1f);
+
+        bool cartaUnicaNueva = false;
+        while (cartaUnicaNueva==false) {
+            indiceActualAdivina = Random.Range(0, sprites.Length - 2);
+            cartaUnicaNueva = true;
+            for (int i = 0; i< indicesAdivinados.Length;i++)
+            {
+                if (indiceActualAdivina== indicesAdivinados[i])
+                {
+
+                    cartaUnicaNueva = false;
+
+                }
+
+            }
+
+        }
+        
+       
+
+        cartaAdivina.sprite = sprites[indiceActualAdivina];
+        yield return new WaitForSeconds(3f);
+        voltearCartasAbajo();
 
 
     }
